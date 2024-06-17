@@ -1,0 +1,132 @@
+import numpy as np
+import pandas as pd
+import smtplib
+from email.mime.text import MIMEText
+import hashlib
+import time
+
+# Simulación de transferencias de dinero
+def simulate_transactions(num_transactions):
+    data = {
+        'transaction_id': np.arange(num_transactions),
+        'amount': np.random.uniform(10, 10000, num_transactions),
+        'sender': np.random.choice(['A', 'B', 'C', 'D', 'E'], num_transactions),
+        'receiver': np.random.choice(['X', 'Y', 'Z', 'W', 'V'], num_transactions),
+        'timestamp': pd.date_range(start='2023-01-01', periods=num_transactions, freq='T')
+    }
+    transactions = pd.DataFrame(data)
+    return transactions
+
+# Función para detectar transacciones sospechosas
+def detect_fraud(transactions, amount_threshold=9000):
+    suspicious_transactions = transactions[transactions['amount'] > amount_threshold]
+    return suspicious_transactions
+
+# Función para enviar una denuncia automática por correo electrónico
+def send_report(suspicious_transactions, ciso_email):
+    if suspicious_transactions.empty:
+        print("No se detectaron transacciones sospechosas.")
+        return
+    
+    # Crear el contenido del correo
+    report = f"Se detectaron {len(suspicious_transactions)} transacciones sospechosas:\n\n"
+    report += suspicious_transactions.to_string(index=False)
+    
+    msg = MIMEText(report)
+    msg['Subject'] = 'Denuncia Automática de Transacciones Sospechosas'
+    msg['From'] = 'your_email@example.com'
+    msg['To'] = ciso_email
+    
+    # Enviar el correo
+    try:
+        with smtplib.SMTP('smtp.example.com', 587) as server:
+            server.starttls()
+            server.login('your_email@example.com', 'your_password')
+            server.send_message(msg)
+        print("Denuncia enviada exitosamente.")
+    except Exception as e:
+        print(f"Error al enviar la denuncia: {e}")
+
+# Función para activar medidas de protección y enviar denuncias
+def activate_protection_measures_and_report(suspicious_transactions, ciso_email):
+    if not suspicious_transactions.empty:
+        print("Transacciones sospechosas detectadas. Activando medidas de protección y enviando denuncia...")
+        # Aquí se pueden agregar medidas de protección reales, como:
+        # - Bloquear cuentas
+        # - Congelar transacciones
+        # - Enviar alertas a los administradores
+        # - Registrar el evento en un sistema de auditoría
+        send_report(suspicious_transactions, ciso_email)
+    else:
+        print("No se detectaron transacciones sospechosas. Sistema seguro.")
+
+# Clase para el bloque de blockchain
+class Block:
+    def __init__(self, index, previous_hash, timestamp, data, hash):
+        self.index = index
+        self.previous_hash = previous_hash
+        self.timestamp = timestamp
+        self.data = data
+        self.hash = hash
+
+def calculate_hash(index, previous_hash, timestamp, data):
+    value = str(index) + str(previous_hash) + str(timestamp) + str(data)
+    return hashlib.sha256(value.encode('utf-8')).hexdigest()
+
+def create_genesis_block():
+    timestamp = time.time()
+    return Block(0, "0", timestamp, "Genesis Block", calculate_hash(0, "0", timestamp, "Genesis Block"))
+
+def create_new_block(previous_block, data):
+    index = previous_block.index + 1
+    timestamp = time.time()
+    previous_hash = previous_block.hash
+    hash = calculate_hash(index, previous_hash, timestamp, data)
+    return Block(index, previous_hash, timestamp, data, hash)
+
+# Crear la cadena de bloques
+blockchain = [create_genesis_block()]
+
+# Función para registrar eventos en el blockchain
+def record_event(event_data):
+    blockchain.append(create_new_block(blockchain[-1], event_data))
+
+# Función principal para ejecutar el sistema de detección y protección
+def main(num_transactions, amount_threshold, ciso_email):
+    # Simular transacciones
+    transactions = simulate_transactions(num_transactions)
+    print("Transacciones simuladas:")
+    print(transactions.head())
+
+    # Detectar fraudes
+    suspicious_transactions = detect_fraud(transactions, amount_threshold)
+    print("Transacciones sospechosas detectadas:")
+    print(suspicious_transactions)
+
+    # Activar medidas de protección y enviar denuncias
+    activate_protection_measures_and_report(suspicious_transactions, ciso_email)
+
+    # Registrar transacciones sospechosas en el blockchain
+    for idx, row in suspicious_transactions.iterrows():
+        event_data = f"Transacción sospechosa: {row['transaction_id']} de {row['sender']} a {row['receiver']} por {row['amount']} en {row['timestamp']}"
+        record_event(event_data)
+    
+    # Registrar medidas de protección en el blockchain
+    record_event("Medidas de protección activadas.")
+
+    # Mostrar los bloques del blockchain
+    for block in blockchain:
+        print(f"Índice: {block.index}")
+        print(f"Hash del bloque anterior: {block.previous_hash}")
+        print(f"Hash: {block.hash}")
+        print(f"Datos: {block.data}")
+        print(f"Sello de tiempo: {time.ctime(block.timestamp)}")
+        print("-" * 50)
+
+# Parámetros de la simulación
+num_transactions = 1000
+amount_threshold = 9000
+ciso_email = 'ciso@example.com'
+
+# Ejecutar el sistema
+main(num_transactions, amount_threshold, ciso_email)
